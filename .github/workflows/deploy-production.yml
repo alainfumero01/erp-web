@@ -47,9 +47,7 @@ jobs:
         run: |
           set -euo pipefail
           python - <<'PY'
-          import json
           import os
-          import sys
           import requests
 
           token = os.environ['GH_TOKEN']
@@ -82,18 +80,17 @@ jobs:
               if permission not in {'write', 'maintain', 'admin'}:
                   raise SystemExit(f'Approver {approver} must have write, maintain, or admin access. Found: {permission}')
 
-          body = f'''Production deployment approval request for `{repo}`.
-
-- Ref: `{ref_to_deploy}`
-- Requested by: `{actor}`
-- Summary: {change_summary}
-- Required approvers: `@{approver_one}` and `@{approver_two}`
-
-Instructions for approvers:
-- comment `/approve` to approve
-- comment `/deny` to reject
-
-The deploy requester cannot self-approve. This issue is closed automatically when the workflow completes.'''
+          body = (
+              f"Production deployment approval request for `{repo}`.\n\n"
+              f"- Ref: `{ref_to_deploy}`\n"
+              f"- Requested by: `{actor}`\n"
+              f"- Summary: {change_summary}\n"
+              f"- Required approvers: `@{approver_one}` and `@{approver_two}`\n\n"
+              "Instructions for approvers:\n"
+              "- comment `/approve` to approve\n"
+              "- comment `/deny` to reject\n\n"
+              "The deploy requester cannot self-approve. This issue is closed automatically when the workflow completes."
+          )
           response = requests.post(
               f'https://api.github.com/repos/{repo}/issues',
               headers=headers,
@@ -103,8 +100,7 @@ The deploy requester cannot self-approve. This issue is closed automatically whe
           response.raise_for_status()
           issue_number = response.json()['number']
           with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as fh:
-              fh.write(f'issue_number={issue_number}
-')
+              fh.write(f'issue_number={issue_number}\n')
           PY
 
   wait-for-approvals:
